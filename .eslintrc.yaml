@@ -1,0 +1,16 @@
+root: true
+extends:
+  - remcohaszing
+  - remcohaszing/typechecking
+rules:
+  import/no-commonjs: off
+  import/no-extraneous-dependencies: off
+  jsdoc/require-jsdoc: off
+  node/no-unpublished-import: off
+
+overrides:
+  - files:
+      - '*.md/*.js'
+    rules:
+      no-empty-function: off
+      no-undef: off
