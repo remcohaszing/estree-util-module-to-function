@@ -1,6 +1,6 @@
 # estree-util-module-to-function
 
-[![github actions](https://github.com/remcohaszing/estree-util-module-to-function/actions/workflows/ci.yml/badge.svg)](https://github.com/remcohaszing/estree-util-module-to-function/actions/workflows/ci.yml)
+[![github actions](https://github.com/remcohaszing/estree-util-module-to-function/actions/workflows/ci.yaml/badge.svg)](https://github.com/remcohaszing/estree-util-module-to-function/actions/workflows/ci.yaml)
 [![npm](https://img.shields.io/npm/v/estree-util-module-to-function)](https://www.npmjs.com/package/estree-util-module-to-function)
 [![codecov](https://codecov.io/gh/remcohaszing/estree-util-module-to-function/branch/main/graph/badge.svg)](https://codecov.io/gh/remcohaszing/estree-util-module-to-function)
 [![prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io)
