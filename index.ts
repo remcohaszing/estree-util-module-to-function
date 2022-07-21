@@ -210,8 +210,8 @@ export interface ModuleToFunctionOptions {
 /**
  * Convert all ESM syntax into a dynamic alternative.
  *
- * @param ast - The AST to process. The AST itself will be modified in place.
- * @param options - Additional options.
+ * @param ast The AST to process. The AST itself will be modified in place.
+ * @param options Additional options.
  */
 export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionOptions = {}): void {
   const imports: ImportTuple[] = []

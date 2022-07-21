@@ -3,7 +3,6 @@ extends:
   - remcohaszing
   - remcohaszing/typechecking
 rules:
-  import/no-commonjs: off
   import/no-extraneous-dependencies: off
   jsdoc/require-jsdoc: off
   node/no-unpublished-import: off
