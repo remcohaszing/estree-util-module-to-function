@@ -312,10 +312,8 @@ export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionO
     ast.body.unshift(createDynamicImports(imports, importName))
   }
 
-  if (exports.length) {
-    ast.body.push({
-      type: 'ReturnStatement',
-      argument: { type: 'ObjectExpression', properties: exports },
-    })
-  }
+  ast.body.push({
+    type: 'ReturnStatement',
+    argument: { type: 'ObjectExpression', properties: exports },
+  })
 }

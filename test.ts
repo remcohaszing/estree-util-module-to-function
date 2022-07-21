@@ -10,60 +10,62 @@ import { moduleToFunction, ModuleToFunctionOptions } from '.'
 const testCases = {
   'transform default imports': {
     input: "import remarkRehype from 'remark-rehype'",
-    plainOutput: "const {default: remarkRehype} = await import('remark-rehype');\n",
-    namedOutput: "const {default: remarkRehype} = await customImport('remark-rehype');\n",
+    plainOutput: "const {default: remarkRehype} = await import('remark-rehype');\nreturn {};\n",
+    namedOutput:
+      "const {default: remarkRehype} = await customImport('remark-rehype');\nreturn {};\n",
   },
 
   'transform named imports': {
     input: "import { useState } from 'react'",
-    plainOutput: "const {useState} = await import('react');\n",
-    namedOutput: "const {useState} = await customImport('react');\n",
+    plainOutput: "const {useState} = await import('react');\nreturn {};\n",
+    namedOutput: "const {useState} = await customImport('react');\nreturn {};\n",
   },
 
   'transform aliased named imports': {
     input: "import { useState as useAliasedState } from 'react'",
-    plainOutput: "const {useState: useAliasedState} = await import('react');\n",
-    namedOutput: "const {useState: useAliasedState} = await customImport('react');\n",
+    plainOutput: "const {useState: useAliasedState} = await import('react');\nreturn {};\n",
+    namedOutput: "const {useState: useAliasedState} = await customImport('react');\nreturn {};\n",
   },
 
   'transform wildcard imports': {
     input: "import * as monaco from 'monaco-editor'",
-    plainOutput: "const monaco = await import('monaco-editor');\n",
-    namedOutput: "const monaco = await customImport('monaco-editor');\n",
+    plainOutput: "const monaco = await import('monaco-editor');\nreturn {};\n",
+    namedOutput: "const monaco = await customImport('monaco-editor');\nreturn {};\n",
   },
 
   'transform bare imports': {
     input: "import './style.css'",
-    plainOutput: "await import('./style.css');\n",
-    namedOutput: "await customImport('./style.css');\n",
+    plainOutput: "await import('./style.css');\nreturn {};\n",
+    namedOutput: "await customImport('./style.css');\nreturn {};\n",
   },
 
   'combine import specifiers': {
     input: "import yaml, { parse as parseYAML, stringify } from 'yaml'",
-    plainOutput: "const {default: yaml, parse: parseYAML, stringify} = await import('yaml');\n",
+    plainOutput:
+      "const {default: yaml, parse: parseYAML, stringify} = await import('yaml');\nreturn {};\n",
     namedOutput:
-      "const {default: yaml, parse: parseYAML, stringify} = await customImport('yaml');\n",
+      "const {default: yaml, parse: parseYAML, stringify} = await customImport('yaml');\nreturn {};\n",
   },
 
   'combine import declarations': {
     input:
       "import { unified } from 'unified'\nimport remarkParse from 'remark-parse'\nimport './style.css'",
     plainOutput:
-      "const [{unified}, {default: remarkParse}, , ] = await Promise.all([import('unified'), import('remark-parse'), import('./style.css')]);\n",
+      "const [{unified}, {default: remarkParse}, , ] = await Promise.all([import('unified'), import('remark-parse'), import('./style.css')]);\nreturn {};\n",
     namedOutput:
-      "const [{unified}, {default: remarkParse}, , ] = await Promise.all([customImport('unified'), customImport('remark-parse'), customImport('./style.css')]);\n",
+      "const [{unified}, {default: remarkParse}, , ] = await Promise.all([customImport('unified'), customImport('remark-parse'), customImport('./style.css')]);\nreturn {};\n",
   },
 
   'convert import expressions': {
     input: 'import("path")',
-    plainOutput: 'import("path");\n',
-    namedOutput: 'customImport("path");\n',
+    plainOutput: 'import("path");\nreturn {};\n',
+    namedOutput: 'customImport("path");\nreturn {};\n',
   },
 
   'convert meta properties': {
     input: 'import.meta.url',
-    plainOutput: 'import.meta.url;\n',
-    namedOutput: 'customImport.meta.url;\n',
+    plainOutput: 'import.meta.url;\nreturn {};\n',
+    namedOutput: 'customImport.meta.url;\nreturn {};\n',
   },
 
   'return export specifiers': {
