@@ -36,7 +36,7 @@ type ImportTuple = [
  * @param node
  *   The import declaration to turn into an import tuple.
  * @returns
- *   A tuple of
+ *   An import tuple.
  */
 function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
   const properties: AssignmentProperty[] = []
