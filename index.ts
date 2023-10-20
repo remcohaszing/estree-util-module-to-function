@@ -1,21 +1,20 @@
 import {
-  AssignmentProperty,
-  AwaitExpression,
-  CallExpression,
-  ExportNamedDeclaration,
-  Identifier,
-  ImportDeclaration,
-  ImportExpression,
-  Literal,
-  MemberExpression,
-  MetaProperty,
-  Node,
-  ObjectPattern,
-  Pattern,
-  Program,
-  Property,
-  Statement,
-  VariableDeclaration,
+  type AssignmentProperty,
+  type AwaitExpression,
+  type CallExpression,
+  type ExportNamedDeclaration,
+  type Identifier,
+  type ImportDeclaration,
+  type ImportExpression,
+  type Literal,
+  type MemberExpression,
+  type MetaProperty,
+  type ObjectPattern,
+  type Pattern,
+  type Program,
+  type Property,
+  type Statement,
+  type VariableDeclaration
 } from 'estree'
 import { walk } from 'estree-walker'
 
@@ -39,7 +38,7 @@ function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
         specifier.type === 'ImportDefaultSpecifier'
           ? { type: 'Identifier', name: 'default' }
           : specifier.imported,
-      value: specifier.local,
+      value: specifier.local
     })
   }
 
@@ -51,7 +50,7 @@ function convertImportExpression(node: ImportExpression, importName: string): Ca
     type: 'CallExpression',
     optional: false,
     callee: { type: 'Identifier', name: importName },
-    arguments: [node.source],
+    arguments: [node.source]
   }
 }
 
@@ -61,7 +60,7 @@ function convertMetaProperty(node: MetaProperty, importName: string): MemberExpr
     computed: false,
     optional: false,
     object: { type: 'Identifier', name: importName },
-    property: node.property,
+    property: node.property
   }
 }
 
@@ -103,7 +102,7 @@ function extractExportNames(node: ExportNamedDeclaration): Property[] {
             method: false,
             kind: 'init',
             key: { type: 'Identifier', name },
-            value: { type: 'Identifier', name },
+            value: { type: 'Identifier', name }
           })
         }
       }
@@ -115,7 +114,7 @@ function extractExportNames(node: ExportNamedDeclaration): Property[] {
         method: false,
         kind: 'init',
         key: { type: 'Identifier', name: node.declaration.id!.name },
-        value: { type: 'Identifier', name: node.declaration.id!.name },
+        value: { type: 'Identifier', name: node.declaration.id!.name }
       })
     }
   }
@@ -130,7 +129,7 @@ function extractExportNames(node: ExportNamedDeclaration): Property[] {
       key: specifier.exported,
       value: node.source
         ? { type: 'Identifier', name: `__re_exported__${specifier.local.name}__` }
-        : specifier.local,
+        : specifier.local
     })
   }
 
@@ -144,12 +143,12 @@ function createDynamicImports(imports: ImportTuple[], importName?: string): Stat
           type: 'CallExpression',
           optional: false,
           callee: { type: 'Identifier', name: importName },
-          arguments: [imp],
+          arguments: [imp]
         }
       : {
           type: 'ImportExpression',
-          source: imp,
-        },
+          source: imp
+        }
   )
 
   const expression: AwaitExpression = {
@@ -165,15 +164,15 @@ function createDynamicImports(imports: ImportTuple[], importName?: string): Stat
               computed: false,
               optional: false,
               object: { type: 'Identifier', name: 'Promise' },
-              property: { type: 'Identifier', name: 'all' },
+              property: { type: 'Identifier', name: 'all' }
             },
             arguments: [
               {
                 type: 'ArrayExpression',
-                elements: importExpressions,
-              },
-            ],
-          },
+                elements: importExpressions
+              }
+            ]
+          }
   }
 
   for (const [imp] of imports) {
@@ -188,9 +187,9 @@ function createDynamicImports(imports: ImportTuple[], importName?: string): Stat
               imports.length === 1
                 ? imports[0][0]!
                 : { type: 'ArrayPattern', elements: imports.map(([mappedImport]) => mappedImport) },
-            init: expression,
-          },
-        ],
+            init: expression
+          }
+        ]
       }
     }
   }
@@ -219,7 +218,7 @@ export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionO
 
   walk(ast, {
     enter(baseNode) {
-      const node = baseNode as Node
+      const node = baseNode
       if (node.type === 'ImportDeclaration') {
         imports.push(convertImportDeclaration(node))
         this.remove()
@@ -242,7 +241,7 @@ export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionO
             shorthand: false,
             kind: 'init',
             key: { type: 'Identifier', name: 'default' },
-            value: { type: 'Identifier', name: declaration.id!.name },
+            value: { type: 'Identifier', name: declaration.id!.name }
           })
         } else {
           this.replace({
@@ -252,9 +251,9 @@ export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionO
               {
                 type: 'VariableDeclarator',
                 id: { type: 'Identifier', name: '__default_export__' },
-                init: declaration,
-              },
-            ],
+                init: declaration
+              }
+            ]
           } as VariableDeclaration)
           exports.push({
             type: 'Property',
@@ -263,7 +262,7 @@ export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionO
             shorthand: false,
             kind: 'init',
             key: { type: 'Identifier', name: 'default' },
-            value: { type: 'Identifier', name: '__default_export__' },
+            value: { type: 'Identifier', name: '__default_export__' }
           })
         }
       } else if (node.type === 'ExportNamedDeclaration') {
@@ -284,10 +283,10 @@ export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionO
                   shorthand: false,
                   kind: 'init',
                   key: { type: 'Identifier', name: (property.key as Identifier).name },
-                  value: { type: 'Identifier', name: (property.value as Identifier).name },
-                })),
+                  value: { type: 'Identifier', name: (property.value as Identifier).name }
+                }))
               },
-              node.source,
+              node.source
             ])
           }
         }
@@ -301,11 +300,11 @@ export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionO
           shorthand: false,
           kind: 'init',
           key: { type: 'Identifier', name: node.exported!.name },
-          value: { type: 'Identifier', name },
+          value: { type: 'Identifier', name }
         })
         this.remove()
       }
-    },
+    }
   })
 
   if (imports.length) {
@@ -314,6 +313,6 @@ export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionO
 
   ast.body.push({
     type: 'ReturnStatement',
-    argument: { type: 'ObjectExpression', properties: exports },
+    argument: { type: 'ObjectExpression', properties: exports }
   })
 }

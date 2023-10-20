@@ -84,12 +84,12 @@ const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor
 function customImport(name) {
   if (name === 'fs/promises') {
     return {
-      readdir: () => ['foo.txt'],
+      readdir: () => ['foo.txt']
     }
   }
   if (name === 'os') {
     return {
-      homedir: () => '/home/fakeuser',
+      homedir: () => '/home/fakeuser'
     }
   }
 }
