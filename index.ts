@@ -18,8 +18,26 @@ import {
 } from 'estree'
 import { walk } from 'estree-walker'
 
-type ImportTuple = [specifier: Identifier | ObjectPattern | null, source: Literal]
+type ImportTuple = [
+  //
+  /**
+   * An identifier for a namespace import, an object pattern for named or default exports, or null
+   * for bare imports.
+   */
+  specifier: Identifier | ObjectPattern | null,
 
+  /**
+   * The source the import originated from.
+   */
+  source: Literal
+]
+
+/**
+ * @param node
+ *   The import declaration to turn into an import tuple.
+ * @returns
+ *   A tuple of
+ */
 function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
   const properties: AssignmentProperty[] = []
 
@@ -45,6 +63,14 @@ function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
   return [properties.length ? { type: 'ObjectPattern', properties } : null, node.source]
 }
 
+/**
+ * @param node
+ *   The import expression to convert to a call expression.
+ * @param importName
+ *   The name of the callee.
+ * @returns
+ *   The import expression converted to a call expression.
+ */
 function convertImportExpression(node: ImportExpression, importName: string): CallExpression {
   return {
     type: 'CallExpression',
@@ -54,6 +80,16 @@ function convertImportExpression(node: ImportExpression, importName: string): Ca
   }
 }
 
+/**
+ * Convert an import meta property to a regular member expression.
+ *
+ * @param node
+ *   THe import meta property to convert
+ * @param importName
+ *   The name of the object containing the meta property.
+ * @returns
+ *   The meta property represented as a member expression.
+ */
 function convertMetaProperty(node: MetaProperty, importName: string): MemberExpression {
   return {
     type: 'MemberExpression',
@@ -64,6 +100,14 @@ function convertMetaProperty(node: MetaProperty, importName: string): MemberExpr
   }
 }
 
+/**
+ * Find all export declarations of a node.
+ *
+ * @param node
+ *   The node on which to find export declarations.
+ * @yields
+ *   The names of all export declarations found.
+ */
 function* findExportDeclarations(node: Pattern): Generator<string> {
   if (node.type === 'Identifier') {
     yield node.name
@@ -88,6 +132,14 @@ function* findExportDeclarations(node: Pattern): Generator<string> {
   }
 }
 
+/**
+ * Extract all export names of a named export.
+ *
+ * @param node
+ *   The export declaration of which to find all exported names.
+ * @returns
+ *   An array of properties.
+ */
 function extractExportNames(node: ExportNamedDeclaration): Property[] {
   const result: Property[] = []
 
@@ -136,8 +188,20 @@ function extractExportNames(node: ExportNamedDeclaration): Property[] {
   return result
 }
 
+/**
+ * Create dynamic imports from import tuples.
+ *
+ * If multiple imports are found, they are combined into a `Promise.all()` call.
+ *
+ * @param imports
+ *   The import tuples from which to create dynamic imports.
+ * @param importName
+ *   The name of a custom identifier to use.
+ * @returns
+ *   An expression that contains all dynamic imports.
+ */
 function createDynamicImports(imports: ImportTuple[], importName?: string): Statement {
-  const importExpressions: (CallExpression | ImportExpression)[] = imports.map(([, imp]) =>
+  const importExpressions = imports.map<CallExpression | ImportExpression>(([, imp]) =>
     importName
       ? {
           type: 'CallExpression',
@@ -209,10 +273,15 @@ export interface ModuleToFunctionOptions {
 /**
  * Convert all ESM syntax into a dynamic alternative.
  *
- * @param ast The AST to process. The AST itself will be modified in place.
- * @param options Additional options.
+ * @param ast
+ *   The AST to process. The AST itself will be modified in place.
+ * @param options
+ *   Additional options.
  */
-export function moduleToFunction(ast: Program, { importName }: ModuleToFunctionOptions = {}): void {
+export function moduleToFunction(
+  ast: Program,
+  { importName }: ModuleToFunctionOptions = {}
+): undefined {
   const imports: ImportTuple[] = []
   const exports: Property[] = []
 
