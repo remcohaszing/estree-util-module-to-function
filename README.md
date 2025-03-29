@@ -126,9 +126,9 @@ console.dir(result)
 
 ## Security
 
-> **Warning** This package only transforms the AST input, which is safe to use on its own. However,
-> it was created with the use case in mind to evaluate an ECMASscript module. Evaluating user input
-> is dangerous and should be avoided whenever possible.
+This package only transforms the AST input, which is safe to use on its own. However, it was created
+with the use case in mind to evaluate an ECMASscript module. Evaluating user input is dangerous and
+should be avoided whenever possible.
 
 ## Compatibility
 
