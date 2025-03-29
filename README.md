@@ -105,6 +105,16 @@ function customImport(name) {
   }
 }
 
+// Optionally define import meta
+costumImport.meta = {
+  dirname: '/stub/dir',
+  filename: '/stub/dir/path.js',
+  url: 'file:///stub/dir/path.js',
+  resolve(specifier) {
+    return specifier
+  }
+}
+
 const source = `
 import { readdir } from 'fs/promises'
 import { homedir } from 'os'
