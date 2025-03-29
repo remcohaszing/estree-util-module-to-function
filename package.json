@@ -4,9 +4,6 @@
   "description": "Convert an estree module into a function body",
   "type": "module",
   "exports": "./dist/estree-util-module-to-function.js",
-  "engines": {
-    "node": ">=14"
-  },
   "scripts": {
     "prepack": "tsc --build",
     "pretest": "tsc --build",
