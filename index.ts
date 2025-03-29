@@ -2,7 +2,9 @@ import {
   type AssignmentProperty,
   type AwaitExpression,
   type CallExpression,
+  type ClassDeclaration,
   type ExportNamedDeclaration,
+  type FunctionDeclaration,
   type Identifier,
   type ImportDeclaration,
   type ImportExpression,
@@ -13,8 +15,7 @@ import {
   type Pattern,
   type Program,
   type Property,
-  type Statement,
-  type VariableDeclaration
+  type Statement
 } from 'estree'
 import { walk } from 'estree-walker'
 
@@ -49,7 +50,8 @@ function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
       type: 'Property',
       method: false,
       shorthand:
-        specifier.type === 'ImportSpecifier' && specifier.imported.name === specifier.local.name,
+        specifier.type === 'ImportSpecifier' &&
+        (specifier.imported as Identifier).name === specifier.local.name,
       computed: false,
       kind: 'init',
       key:
@@ -165,8 +167,8 @@ function extractExportNames(node: ExportNamedDeclaration): Property[] {
         shorthand: true,
         method: false,
         kind: 'init',
-        key: { type: 'Identifier', name: node.declaration.id!.name },
-        value: { type: 'Identifier', name: node.declaration.id!.name }
+        key: { type: 'Identifier', name: node.declaration.id.name },
+        value: { type: 'Identifier', name: node.declaration.id.name }
       })
     }
   }
@@ -175,12 +177,14 @@ function extractExportNames(node: ExportNamedDeclaration): Property[] {
     result.push({
       type: 'Property',
       computed: false,
-      shorthand: !node.source && specifier.exported.name === specifier.local.name,
+      shorthand:
+        !node.source &&
+        (specifier.exported as Identifier).name === (specifier.local as Identifier).name,
       method: false,
       kind: 'init',
       key: specifier.exported,
       value: node.source
-        ? { type: 'Identifier', name: `__re_exported__${specifier.local.name}__` }
+        ? { type: 'Identifier', name: `__re_exported__${(specifier.local as Identifier).name}__` }
         : specifier.local
     })
   }
@@ -201,19 +205,25 @@ function extractExportNames(node: ExportNamedDeclaration): Property[] {
  *   An expression that contains all dynamic imports.
  */
 function createDynamicImports(imports: ImportTuple[], importName?: string): Statement {
-  const importExpressions = imports.map<CallExpression | ImportExpression>(([, imp]) =>
-    importName
-      ? {
-          type: 'CallExpression',
-          optional: false,
-          callee: { type: 'Identifier', name: importName },
-          arguments: [imp]
-        }
-      : {
-          type: 'ImportExpression',
-          source: imp
-        }
-  )
+  const importExpressions: (CallExpression | ImportExpression)[] = []
+  const specifiers: (Pattern | null)[] = []
+  let hasSpecifiers = false
+
+  for (const [specifier, source] of imports) {
+    importExpressions.push(
+      importName
+        ? {
+            type: 'CallExpression',
+            optional: false,
+            callee: { type: 'Identifier', name: importName },
+            arguments: [source]
+          }
+        : { type: 'ImportExpression', source }
+    )
+
+    hasSpecifiers ||= Boolean(specifier)
+    specifiers.push(specifier)
+  }
 
   const expression: AwaitExpression = {
     type: 'AwaitExpression',
@@ -230,31 +240,22 @@ function createDynamicImports(imports: ImportTuple[], importName?: string): Stat
               object: { type: 'Identifier', name: 'Promise' },
               property: { type: 'Identifier', name: 'all' }
             },
-            arguments: [
-              {
-                type: 'ArrayExpression',
-                elements: importExpressions
-              }
-            ]
+            arguments: [{ type: 'ArrayExpression', elements: importExpressions }]
           }
   }
 
-  for (const [imp] of imports) {
-    if (imp) {
-      return {
-        type: 'VariableDeclaration',
-        kind: 'const',
-        declarations: [
-          {
-            type: 'VariableDeclarator',
-            id:
-              imports.length === 1
-                ? imports[0][0]!
-                : { type: 'ArrayPattern', elements: imports.map(([mappedImport]) => mappedImport) },
-            init: expression
-          }
-        ]
-      }
+  if (hasSpecifiers) {
+    return {
+      type: 'VariableDeclaration',
+      kind: 'const',
+      declarations: [
+        {
+          type: 'VariableDeclarator',
+          id:
+            imports.length === 1 ? specifiers[0]! : { type: 'ArrayPattern', elements: specifiers },
+          init: expression
+        }
+      ]
     }
   }
 
@@ -302,7 +303,7 @@ export function moduleToFunction(
       } else if (node.type === 'ExportDefaultDeclaration') {
         const { declaration } = node
         if (declaration.type === 'FunctionDeclaration' || declaration.type === 'ClassDeclaration') {
-          this.replace(declaration)
+          this.replace(declaration as ClassDeclaration | FunctionDeclaration)
           exports.push({
             type: 'Property',
             computed: false,
@@ -323,7 +324,7 @@ export function moduleToFunction(
                 init: declaration
               }
             ]
-          } as VariableDeclaration)
+          })
           exports.push({
             type: 'Property',
             computed: false,
@@ -360,7 +361,7 @@ export function moduleToFunction(
           }
         }
       } else if (node.type === 'ExportAllDeclaration') {
-        const name = `__re_exported_star__${node.exported!.name}__`
+        const name = `__re_exported_star__${(node.exported as Identifier).name}__`
         imports.push([{ type: 'Identifier', name }, node.source])
         exports.push({
           type: 'Property',
@@ -368,7 +369,7 @@ export function moduleToFunction(
           method: false,
           shorthand: false,
           kind: 'init',
-          key: { type: 'Identifier', name: node.exported!.name },
+          key: { type: 'Identifier', name: (node.exported as Identifier).name },
           value: { type: 'Identifier', name }
         })
         this.remove()
