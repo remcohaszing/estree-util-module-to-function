@@ -1,11 +1,22 @@
 # estree-util-module-to-function
 
 [![github actions](https://github.com/remcohaszing/estree-util-module-to-function/actions/workflows/ci.yaml/badge.svg)](https://github.com/remcohaszing/estree-util-module-to-function/actions/workflows/ci.yaml)
-[![npm](https://img.shields.io/npm/v/estree-util-module-to-function)](https://www.npmjs.com/package/estree-util-module-to-function)
 [![codecov](https://codecov.io/gh/remcohaszing/estree-util-module-to-function/branch/main/graph/badge.svg)](https://codecov.io/gh/remcohaszing/estree-util-module-to-function)
-[![prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io)
+[![npm version](https://img.shields.io/npm/v/estree-util-module-to-function)](https://www.npmjs.com/package/estree-util-module-to-function)
+[![npm downloads](https://img.shields.io/npm/dm/estree-util-module-to-function)](https://www.npmjs.com/package/estree-util-module-to-function)
 
 Convert an estree module into a function body.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [API](#api)
+  - [`moduleToFunction(ast, options?)`](#moduletofunctionast-options)
+- [Examples](#examples)
+- [Security](#security)
+- [Compatibility](#compatibility)
+- [License](#license)
 
 ## Installation
 
@@ -118,6 +129,10 @@ console.dir(result)
 > **Warning** This package only transforms the AST input, which is safe to use on its own. However,
 > it was created with the use case in mind to evaluate an ECMASscript module. Evaluating user input
 > is dangerous and should be avoided whenever possible.
+
+## Compatibility
+
+This project is compatible with Node.js 20 or greater.
 
 ## License
 
