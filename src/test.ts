@@ -1,9 +1,10 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
 import { parse } from 'acorn'
 import { generate } from 'astring'
 import { type Node, type Program } from 'estree'
 import { moduleToFunction, type ModuleToFunctionOptions } from 'estree-util-module-to-function'
-import { test } from 'uvu'
-import { equal } from 'uvu/assert'
 
 const testCases = {
   'transform default imports': {
@@ -190,14 +191,12 @@ for (const [description, { input, namedOutput, plainOutput }] of Object.entries(
   test(`${description} (plain)`, () => {
     const result = process(input)
 
-    equal(result, plainOutput)
+    assert.equal(result, plainOutput)
   })
 
   test(`${description} (named)`, () => {
     const result = process(input, { importName: 'customImport' })
 
-    equal(result, namedOutput)
+    assert.equal(result, namedOutput)
   })
 }
-
-test.run()
