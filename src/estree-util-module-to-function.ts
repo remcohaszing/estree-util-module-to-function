@@ -262,13 +262,15 @@ function createDynamicImports(imports: ImportTuple[], importName?: string): Stat
   return { type: 'ExpressionStatement', expression }
 }
 
-export interface ModuleToFunctionOptions {
-  /**
-   * If specified, a variable of this name will be used to replace imports.
-   *
-   * By default a dynamic import statements will be used.
-   */
-  importName?: string
+export namespace moduleToFunction {
+  export interface Options {
+    /**
+     * If specified, a variable of this name will be used to replace imports.
+     *
+     * By default a dynamic import statements will be used.
+     */
+    importName?: string
+  }
 }
 
 /**
@@ -281,7 +283,7 @@ export interface ModuleToFunctionOptions {
  */
 export function moduleToFunction(
   ast: Program,
-  { importName }: ModuleToFunctionOptions = {}
+  { importName }: moduleToFunction.Options = {}
 ): undefined {
   const imports: ImportTuple[] = []
   const exports: Property[] = []
