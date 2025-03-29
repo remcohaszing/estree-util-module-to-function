@@ -1,5 +1,5 @@
 export default async () => {
   'use strict'
-  import('path')
+  await import('estree-walker')
   return {}
 }

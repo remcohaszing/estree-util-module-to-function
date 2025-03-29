@@ -1,0 +1,3 @@
+function strictFunction() {
+  'use strict'
+}

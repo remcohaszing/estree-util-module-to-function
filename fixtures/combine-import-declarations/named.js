@@ -1,4 +1,5 @@
 export default async (customImport) => {
+  'use strict'
   const [{ unified }, { default: remarkParse }, ,] = await Promise.all([
     customImport('unified'),
     customImport('remark-parse'),

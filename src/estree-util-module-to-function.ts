@@ -4,6 +4,7 @@ import {
   type CallExpression,
   type ClassDeclaration,
   type ExportNamedDeclaration,
+  type ExpressionStatement,
   type FunctionDeclaration,
   type Identifier,
   type ImportDeclaration,
@@ -287,11 +288,24 @@ export function moduleToFunction(
 ): undefined {
   const imports: ImportTuple[] = []
   const exports: Property[] = []
+  let directive: ExpressionStatement | undefined
 
   walk(ast, {
     enter(baseNode) {
       const node = baseNode
-      if (node.type === 'ImportDeclaration') {
+      if (node.type === 'ExpressionStatement') {
+        const { expression } = node
+        if (expression.type !== 'Literal') {
+          return
+        }
+
+        if (expression.value !== 'use strict') {
+          return
+        }
+
+        directive ||= node
+        this.remove()
+      } else if (node.type === 'ImportDeclaration') {
         imports.push(convertImportDeclaration(node))
         this.remove()
       } else if (node.type === 'ImportExpression') {
@@ -382,6 +396,13 @@ export function moduleToFunction(
   if (imports.length) {
     ast.body.unshift(createDynamicImports(imports, importName))
   }
+
+  ast.body.unshift(
+    directive ?? {
+      type: 'ExpressionStatement',
+      expression: { type: 'Literal', value: 'use strict' }
+    }
+  )
 
   ast.body.push({
     type: 'ReturnStatement',

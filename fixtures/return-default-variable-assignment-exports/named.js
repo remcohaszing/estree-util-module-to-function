@@ -1,4 +1,5 @@
 export default async (customImport) => {
+  'use strict'
   let variable
   const __default_export__ = (variable = 'value')
   return {

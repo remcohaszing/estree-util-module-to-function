@@ -1,4 +1,5 @@
 export default async () => {
+  'use strict'
   const {
     deeply: [
       {
