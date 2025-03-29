@@ -1,10 +1,9 @@
 import { parse } from 'acorn'
 import { generate } from 'astring'
 import { type Node, type Program } from 'estree'
+import { moduleToFunction, type ModuleToFunctionOptions } from 'estree-util-module-to-function'
 import { test } from 'uvu'
 import { equal } from 'uvu/assert'
-
-import { moduleToFunction, type ModuleToFunctionOptions } from './index.js'
 
 const testCases = {
   'transform default imports': {

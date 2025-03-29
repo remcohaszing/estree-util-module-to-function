@@ -3,13 +3,14 @@
   "version": "1.0.1",
   "description": "Convert an estree module into a function body",
   "type": "module",
+  "exports": "./dist/estree-util-module-to-function.js",
   "engines": {
     "node": ">=14"
   },
   "scripts": {
-    "prepack": "tsc --noEmit false",
-    "start": "tsx watch test.ts",
-    "test": "c8 tsx test.ts"
+    "prepack": "tsc --build",
+    "pretest": "tsc --build",
+    "test": "c8 node --enable-source-maps --test"
   },
   "repository": {
     "type": "git",
@@ -27,14 +28,16 @@
   },
   "homepage": "https://github.com/remcohaszing/estree-util-module-to-function#readme",
   "files": [
-    "index.js",
-    "index.d.ts"
+    "src",
+    "dist",
+    "!test*"
   ],
   "dependencies": {
     "@types/estree": "^1.0.0",
     "estree-walker": "^3.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "acorn": "^8.0.0",
     "astring": "^1.0.0",
     "c8": "^8.0.0",

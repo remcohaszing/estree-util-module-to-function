@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
     "declaration": true,
+    "declarationMap": true,
     "module": "nodenext",
-    "noEmit": true,
-    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
     "target": "es2020"
