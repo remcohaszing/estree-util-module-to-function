@@ -9,10 +9,7 @@
     "pretest": "tsc --build",
     "test": "c8 node --enable-source-maps --test"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/remcohaszing/estree-util-module-to-function.git"
-  },
+  "repository": "remcohaszing/estree-util-module-to-function",
   "keywords": [
     "esast",
     "esm",
@@ -20,9 +17,7 @@
   ],
   "author": "Remco Haszing <remcohaszing@gmail.com>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/remcohaszing/estree-util-module-to-function/issues"
-  },
+  "bugs": "https://github.com/remcohaszing/estree-util-module-to-function/issues",
   "homepage": "https://github.com/remcohaszing/estree-util-module-to-function#readme",
   "files": [
     "src",
