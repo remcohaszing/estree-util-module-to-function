@@ -79,7 +79,7 @@ import { parse } from 'acorn'
 import { generate } from 'astring'
 import { moduleToFunction } from 'estree-util-module-to-function'
 
-const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor
+const AsyncFunction = (async () => {}).constructor
 
 function customImport(name) {
   if (name === 'fs/promises') {
