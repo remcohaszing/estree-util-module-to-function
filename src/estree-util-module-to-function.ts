@@ -7,11 +7,13 @@ import {
   type ExpressionStatement,
   type FunctionDeclaration,
   type Identifier,
+  type ImportAttribute,
   type ImportDeclaration,
   type ImportExpression,
   type Literal,
   type MemberExpression,
   type MetaProperty,
+  type ObjectExpression,
   type ObjectPattern,
   type Pattern,
   type Program,
@@ -31,7 +33,12 @@ type ImportTuple = [
   /**
    * The source the import originated from.
    */
-  source: Literal
+  source: Literal,
+
+  /**
+   * The import attributes of an import or re-export.
+   */
+  attributes: ImportAttribute[] | undefined
 ]
 
 /**
@@ -45,7 +52,7 @@ function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
 
   for (const specifier of node.specifiers) {
     if (specifier.type === 'ImportNamespaceSpecifier') {
-      return [specifier.local, node.source]
+      return [specifier.local, node.source, node.attributes]
     }
     properties.push({
       type: 'Property',
@@ -63,7 +70,47 @@ function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
     })
   }
 
-  return [properties.length ? { type: 'ObjectPattern', properties } : null, node.source]
+  return [
+    properties.length ? { type: 'ObjectPattern', properties } : null,
+    node.source,
+    node.attributes
+  ]
+}
+
+/**
+ * Convert import attributes to an object expression.
+ *
+ * @param attributes
+ *   The import attributes to turn into an object.
+ * @returns
+ *   An object that represents the import attributes.
+ */
+function convertImportAttributes(attributes: ImportAttribute[]): ObjectExpression {
+  return {
+    type: 'ObjectExpression',
+    properties: [
+      {
+        type: 'Property',
+        computed: false,
+        method: false,
+        shorthand: false,
+        kind: 'init',
+        key: { type: 'Identifier', name: 'with' },
+        value: {
+          type: 'ObjectExpression',
+          properties: attributes.map(({ key, value }) => ({
+            type: 'Property',
+            computed: false,
+            method: false,
+            shorthand: false,
+            kind: 'init',
+            key,
+            value
+          }))
+        }
+      }
+    ]
+  }
 }
 
 /**
@@ -75,12 +122,18 @@ function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
  *   The import expression converted to a call expression.
  */
 function convertImportExpression(node: ImportExpression, importName: string): CallExpression {
-  return {
+  const callExpression: CallExpression = {
     type: 'CallExpression',
     optional: false,
     callee: { type: 'Identifier', name: importName },
     arguments: [node.source]
   }
+
+  if (node.options) {
+    callExpression.arguments.push(node.options)
+  }
+
+  return callExpression
 }
 
 /**
@@ -210,17 +263,25 @@ function createDynamicImports(imports: ImportTuple[], importName?: string): Stat
   const specifiers: (Pattern | null)[] = []
   let hasSpecifiers = false
 
-  for (const [specifier, source] of imports) {
-    importExpressions.push(
-      importName
-        ? {
-            type: 'CallExpression',
-            optional: false,
-            callee: { type: 'Identifier', name: importName },
-            arguments: [source]
-          }
-        : { type: 'ImportExpression', source }
-    )
+  for (const [specifier, source, attributes = []] of imports) {
+    if (importName) {
+      const callExpression: CallExpression = {
+        type: 'CallExpression',
+        optional: false,
+        callee: { type: 'Identifier', name: importName },
+        arguments: [source]
+      }
+      if (attributes.length) {
+        callExpression.arguments.push(convertImportAttributes(attributes))
+      }
+      importExpressions.push(callExpression)
+    } else {
+      const importExpression: ImportExpression = { type: 'ImportExpression', source }
+      if (attributes.length) {
+        importExpression.options = convertImportAttributes(attributes)
+      }
+      importExpressions.push(importExpression)
+    }
 
     hasSpecifiers ||= Boolean(specifier)
     specifiers.push(specifier)
@@ -372,13 +433,14 @@ export function moduleToFunction(
                   value: { type: 'Identifier', name: (property.value as Identifier).name }
                 }))
               },
-              node.source
+              node.source,
+              node.attributes
             ])
           }
         }
       } else if (node.type === 'ExportAllDeclaration') {
         const name = `__re_exported_star__${(node.exported as Identifier).name}__`
-        imports.push([{ type: 'Identifier', name }, node.source])
+        imports.push([{ type: 'Identifier', name }, node.source, node.attributes])
         exports.push({
           type: 'Property',
           computed: false,
