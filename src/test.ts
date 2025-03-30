@@ -25,7 +25,7 @@ testFixturesDirectory({
         sourceType: 'module'
       }) as Program
       moduleToFunction(ast, { importName })
-      return `export default async (${importName}) => {${generate(ast)}}`
+      return `/** @param {import('estree-util-module-to-function').Import} ${importName} */\nexport default async (${importName}) => {${generate(ast)}}`
     }
   }
 })

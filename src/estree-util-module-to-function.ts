@@ -324,6 +324,34 @@ function createDynamicImports(imports: ImportTuple[], importName?: string): Stat
   return { type: 'ExpressionStatement', expression }
 }
 
+/**
+ * A function that looks like an import expression.
+ */
+export interface Import {
+  /**
+   * A custom dynamic import handler.
+   *
+   * @param specifier
+   *   The module to import from.
+   *
+   *   See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#modulename
+   * @param options
+   *   An object containing import options.
+   *
+   *   See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#options
+   * @returns
+   *   A promise that resolves to the module.
+   */
+  (specifier: string, options?: ImportCallOptions): Promise<Record<string, unknown>>
+
+  /**
+   * The `import.meta` meta-property exposes context-specific metadata to a JavaScript module.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta
+   */
+  meta?: Partial<ImportMeta>
+}
+
 export namespace moduleToFunction {
   export interface Options {
     /**

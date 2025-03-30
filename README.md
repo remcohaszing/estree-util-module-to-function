@@ -28,7 +28,7 @@ npm install estree-util-module-to-function
 
 Typically you’ll get an AST from [`acorn`](https://github.com/acornjs/acorn), then process it.
 
-```js
+```typescript
 import { parse } from 'acorn'
 import { moduleToFunction } from 'estree-util-module-to-function'
 
@@ -57,7 +57,7 @@ Convert an estree module into a function body. This modifies the input AST.
 The following example shows how to read the home directory in Node.js by using ESM code from a
 string.
 
-```js
+```typescript
 import { parse } from 'acorn'
 import { generate } from 'astring'
 import { moduleToFunction } from 'estree-util-module-to-function'
@@ -65,8 +65,8 @@ import { moduleToFunction } from 'estree-util-module-to-function'
 const AsyncFunction = (async () => {}).constructor
 
 const source = `
-import { readdir } from 'fs/promises'
-import { homedir } from 'os'
+import { readdir } from 'node:fs/promises'
+import { homedir } from 'node:os'
 
 const home = homedir()
 export default home
@@ -85,23 +85,40 @@ console.dir(result)
 The following example is derived from the above. It injects a custom import function, which stubs
 actual import behaviour.
 
-```js
+```typescript
 import { parse } from 'acorn'
 import { generate } from 'astring'
 import { moduleToFunction } from 'estree-util-module-to-function'
 
-const AsyncFunction = (async () => {}).constructor
-
-function customImport(name) {
-  if (name === 'fs/promises') {
-    return {
-      readdir: () => ['foo.txt']
-    }
-  }
-  if (name === 'os') {
-    return {
-      homedir: () => '/home/fakeuser'
-    }
+const customImport: Import = async (name) => {
+  switch (name) {
+    case 'node:fs/promises':
+    case 'fs/promises':
+      return {
+        async readdir() {
+          return [
+            '.cache',
+            '.config',
+            '.local',
+            'Documents',
+            'Downloads',
+            'Music',
+            'Pictures',
+            'Public',
+            'Templates',
+            'Videos'
+          ]
+        }
+      }
+    case 'node:os':
+    case 'os':
+      return {
+        homedir() {
+          return '/home/fakeuser'
+        }
+      }
+    default:
+      throw new Error(`Cannot find package '${name}'`)
   }
 }
 
@@ -115,9 +132,11 @@ costumImport.meta = {
   }
 }
 
+const AsyncFunction = customImport.constructor
+
 const source = `
-import { readdir } from 'fs/promises'
-import { homedir } from 'os'
+import { readdir } from 'node:fs/promises'
+import { homedir } from 'node:os'
 
 const home = homedir()
 export default home
