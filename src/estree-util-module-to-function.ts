@@ -381,103 +381,123 @@ export function moduleToFunction(
 
   walk(ast, {
     enter(node) {
-      if (node.type === 'ExpressionStatement') {
-        const { expression } = node
-        if (expression.type !== 'Literal') {
-          return
-        }
-
-        if (expression.value !== 'use strict') {
-          return
-        }
-
-        directive ||= node
-        this.remove()
-      } else if (node.type === 'ImportDeclaration') {
-        imports.push(convertImportDeclaration(node))
-        this.remove()
-      } else if (node.type === 'ImportExpression') {
-        if (importName) {
-          this.replace(convertImportExpression(node, importName))
-        }
-      } else if (node.type === 'MetaProperty') {
-        if (importName) {
-          this.replace(convertMetaProperty(node, importName))
-        }
-      } else if (node.type === 'ExportDefaultDeclaration') {
-        const { declaration } = node
-        if (declaration.type === 'FunctionDeclaration' || declaration.type === 'ClassDeclaration') {
-          this.replace(declaration as ClassDeclaration | FunctionDeclaration)
-          exports.push({
-            type: 'Property',
-            computed: false,
-            method: false,
-            shorthand: false,
-            kind: 'init',
-            key: { type: 'Identifier', name: 'default' },
-            value: { type: 'Identifier', name: declaration.id!.name }
-          })
-        } else {
-          this.replace({
-            type: 'VariableDeclaration',
-            kind: 'const',
-            declarations: [
-              {
-                type: 'VariableDeclarator',
-                id: { type: 'Identifier', name: '__default_export__' },
-                init: declaration
-              }
-            ]
-          })
-          exports.push({
-            type: 'Property',
-            computed: false,
-            method: false,
-            shorthand: false,
-            kind: 'init',
-            key: { type: 'Identifier', name: 'default' },
-            value: { type: 'Identifier', name: '__default_export__' }
-          })
-        }
-      } else if (node.type === 'ExportNamedDeclaration') {
-        const nodeExports = [...extractExportNames(node)]
-        exports.push(...nodeExports)
-        if (node.declaration) {
-          this.replace(node.declaration)
-        } else {
-          this.remove()
-          if (node.source) {
-            imports.push([
-              {
-                type: 'ObjectPattern',
-                properties: nodeExports.map((property) => ({
-                  type: 'Property',
-                  computed: false,
-                  method: false,
-                  shorthand: false,
-                  kind: 'init',
-                  key: { type: 'Identifier', name: (property.key as Identifier).name },
-                  value: { type: 'Identifier', name: (property.value as Identifier).name }
-                }))
-              },
-              node.source,
-              node.attributes
-            ])
+      switch (node.type) {
+        case 'ExpressionStatement': {
+          const { expression } = node
+          if (expression.type !== 'Literal') {
+            return
           }
+
+          if (expression.value !== 'use strict') {
+            return
+          }
+
+          directive ||= node
+          this.remove()
+          return
         }
-      } else if (node.type === 'ExportAllDeclaration') {
-        const name = `__re_exported_star__${(node.exported as Identifier).name}__`
-        imports.push([{ type: 'Identifier', name }, node.source, node.attributes])
-        exports.push({
-          type: 'Property',
-          computed: false,
-          method: false,
-          shorthand: false,
-          kind: 'init',
-          key: { type: 'Identifier', name: (node.exported as Identifier).name },
-          value: { type: 'Identifier', name }
-        })
-        this.remove()
+
+        case 'ImportDeclaration':
+          imports.push(convertImportDeclaration(node))
+          this.remove()
+          return
+
+        case 'ImportExpression':
+          if (importName) {
+            this.replace(convertImportExpression(node, importName))
+          }
+          return
+
+        case 'MetaProperty':
+          if (importName) {
+            this.replace(convertMetaProperty(node, importName))
+          }
+          return
+
+        case 'ExportDefaultDeclaration': {
+          const { declaration } = node
+          if (
+            declaration.type === 'FunctionDeclaration' ||
+            declaration.type === 'ClassDeclaration'
+          ) {
+            this.replace(declaration as ClassDeclaration | FunctionDeclaration)
+            exports.push({
+              type: 'Property',
+              computed: false,
+              method: false,
+              shorthand: false,
+              kind: 'init',
+              key: { type: 'Identifier', name: 'default' },
+              value: { type: 'Identifier', name: declaration.id!.name }
+            })
+          } else {
+            this.replace({
+              type: 'VariableDeclaration',
+              kind: 'const',
+              declarations: [
+                {
+                  type: 'VariableDeclarator',
+                  id: { type: 'Identifier', name: '__default_export__' },
+                  init: declaration
+                }
+              ]
+            })
+            exports.push({
+              type: 'Property',
+              computed: false,
+              method: false,
+              shorthand: false,
+              kind: 'init',
+              key: { type: 'Identifier', name: 'default' },
+              value: { type: 'Identifier', name: '__default_export__' }
+            })
+          }
+          return
+        }
+
+        case 'ExportNamedDeclaration': {
+          const nodeExports = [...extractExportNames(node)]
+          exports.push(...nodeExports)
+          if (node.declaration) {
+            this.replace(node.declaration)
+          } else {
+            this.remove()
+            if (node.source) {
+              imports.push([
+                {
+                  type: 'ObjectPattern',
+                  properties: nodeExports.map((property) => ({
+                    type: 'Property',
+                    computed: false,
+                    method: false,
+                    shorthand: false,
+                    kind: 'init',
+                    key: { type: 'Identifier', name: (property.key as Identifier).name },
+                    value: { type: 'Identifier', name: (property.value as Identifier).name }
+                  }))
+                },
+                node.source,
+                node.attributes
+              ])
+            }
+          }
+          return
+        }
+
+        case 'ExportAllDeclaration': {
+          const name = `__re_exported_star__${(node.exported as Identifier).name}__`
+          imports.push([{ type: 'Identifier', name }, node.source, node.attributes])
+          exports.push({
+            type: 'Property',
+            computed: false,
+            method: false,
+            shorthand: false,
+            kind: 'init',
+            key: { type: 'Identifier', name: (node.exported as Identifier).name },
+            value: { type: 'Identifier', name }
+          })
+          this.remove()
+        }
       }
     }
   })

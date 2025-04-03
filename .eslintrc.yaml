@@ -3,8 +3,10 @@ extends:
   - remcohaszing
   - remcohaszing/typechecking
 rules:
+  default-case: off
   '@typescript-eslint/no-namespace': off
   '@typescript-eslint/no-redeclare': off
+  '@typescript-eslint/switch-exhaustiveness-check': off
   jsdoc/check-indentation: off
 
 overrides:
