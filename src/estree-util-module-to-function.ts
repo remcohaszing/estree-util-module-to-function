@@ -380,8 +380,7 @@ export function moduleToFunction(
   let directive: ExpressionStatement | undefined
 
   walk(ast, {
-    enter(baseNode) {
-      const node = baseNode
+    enter(node) {
       if (node.type === 'ExpressionStatement') {
         const { expression } = node
         if (expression.type !== 'Literal') {
