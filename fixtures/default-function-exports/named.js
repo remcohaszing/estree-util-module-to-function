@@ -4,6 +4,7 @@ export default async (customImport) => {
   function fn() {}
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     default: fn
   }
 }

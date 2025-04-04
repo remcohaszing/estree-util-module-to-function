@@ -7,6 +7,7 @@ export default async (customImport) => {
     customImport('./style.css')
   ])
   return {
-    __proto__: null
+    __proto__: null,
+    [Symbol.toStringTag]: 'Module'
   }
 }

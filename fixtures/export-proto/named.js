@@ -4,6 +4,7 @@ export default async (customImport) => {
   const __proto__ = 'silly'
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     ['__proto__']: __proto__
   }
 }

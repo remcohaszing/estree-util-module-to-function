@@ -365,6 +365,21 @@ export function moduleToFunction(
       kind: 'init',
       key: { type: 'Identifier', name: '__proto__' },
       value: { type: 'Literal', value: null }
+    },
+    {
+      type: 'Property',
+      computed: true,
+      method: false,
+      shorthand: false,
+      kind: 'init',
+      key: {
+        type: 'MemberExpression',
+        computed: false,
+        optional: false,
+        object: { type: 'Identifier', name: 'Symbol' },
+        property: { type: 'Identifier', name: 'toStringTag' }
+      },
+      value: { type: 'Literal', value: 'Module' }
     }
   ]
 

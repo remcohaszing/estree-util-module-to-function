@@ -11,6 +11,7 @@ export default async () => {
   } = original
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     exported
   }
 }

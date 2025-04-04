@@ -3,6 +3,7 @@ export default async () => {
   function fn() {}
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     default: fn
   }
 }

@@ -4,6 +4,7 @@ export default async (customImport) => {
   class Person {}
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     Person
   }
 }

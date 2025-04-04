@@ -3,6 +3,7 @@ export default async () => {
   const { ...copy } = original
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     copy
   }
 }

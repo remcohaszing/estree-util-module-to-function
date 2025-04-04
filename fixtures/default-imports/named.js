@@ -3,6 +3,7 @@ export default async (customImport) => {
   'use strict'
   const { default: remarkRehype } = await customImport('remark-rehype')
   return {
-    __proto__: null
+    __proto__: null,
+    [Symbol.toStringTag]: 'Module'
   }
 }

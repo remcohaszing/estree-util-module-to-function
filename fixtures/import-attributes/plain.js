@@ -12,6 +12,7 @@ export default async () => {
   import('unified')
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     default: _imports[3].default,
     singleQuote: _imports[4].singleQuote,
     eslint: _imports[5]

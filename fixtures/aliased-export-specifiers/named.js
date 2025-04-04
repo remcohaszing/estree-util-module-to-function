@@ -4,6 +4,7 @@ export default async (customImport) => {
   const answer = 42
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     everything: answer
   }
 }

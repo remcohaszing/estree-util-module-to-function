@@ -3,6 +3,7 @@ export default async () => {
   const [one, , three] = counts
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     one,
     three
   }

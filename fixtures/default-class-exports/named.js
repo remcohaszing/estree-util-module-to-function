@@ -4,6 +4,7 @@ export default async (customImport) => {
   class Pet {}
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     default: Pet
   }
 }

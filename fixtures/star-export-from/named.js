@@ -4,6 +4,7 @@ export default async (customImport) => {
   const _imports = await customImport('module')
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     reexport: _imports
   }
 }

@@ -12,6 +12,7 @@ export default async (customImport) => {
   } = original
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     exported
   }
 }

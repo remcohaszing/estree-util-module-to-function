@@ -3,6 +3,7 @@ export default async () => {
   class Person {}
   return {
     __proto__: null,
+    [Symbol.toStringTag]: 'Module',
     Person
   }
 }

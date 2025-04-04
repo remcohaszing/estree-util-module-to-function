@@ -2,6 +2,7 @@ export default async () => {
   'use strict'
   import('path')
   return {
-    __proto__: null
+    __proto__: null,
+    [Symbol.toStringTag]: 'Module'
   }
 }

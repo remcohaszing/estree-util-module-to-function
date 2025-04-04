@@ -3,6 +3,7 @@ export default async (customImport) => {
   'use strict'
   const monaco = await customImport('monaco-editor')
   return {
-    __proto__: null
+    __proto__: null,
+    [Symbol.toStringTag]: 'Module'
   }
 }
