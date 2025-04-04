@@ -117,20 +117,14 @@ function* findExportDeclarations(node: Pattern): Generator<string> {
     yield node.name
   } else if (node.type === 'ObjectPattern') {
     for (const property of node.properties) {
-      if (property.type === 'RestElement') {
-        yield (property.argument as Identifier).name
-      } else {
-        yield* findExportDeclarations(property.value)
-      }
+      yield* findExportDeclarations(
+        property.type === 'RestElement' ? property.argument : property.value
+      )
     }
   } else if (node.type === 'ArrayPattern') {
     for (const element of node.elements) {
       if (element) {
-        if (element.type === 'RestElement') {
-          yield (element.argument as Identifier).name
-        } else {
-          yield* findExportDeclarations(element)
-        }
+        yield* findExportDeclarations(element.type === 'RestElement' ? element.argument : element)
       }
     }
   }
