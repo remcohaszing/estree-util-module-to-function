@@ -473,7 +473,7 @@ export function moduleToFunction(
             for (const specifier of node.specifiers) {
               const memberExpression: MemberExpression = {
                 type: 'MemberExpression',
-                computed: false,
+                computed: specifier.local.type === 'Literal',
                 optional: false,
                 object: {
                   type: 'MemberExpression',
