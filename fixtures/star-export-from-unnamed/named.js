@@ -1,7 +1,7 @@
 /** @param {import('estree-util-module-to-function').Import} customImport */
 export default async (customImport) => {
   'use strict'
-  const _imports = await customImport('module')
+  const _imports = await customImport('module').then(({ default: _, ...m }) => m)
   return {
     __proto__: null,
     [Symbol.toStringTag]: 'Module',

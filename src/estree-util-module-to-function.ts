@@ -534,10 +534,49 @@ export function moduleToFunction(
           const property: Property | SpreadElement = node.exported
             ? createProperty(node.exported, memberExpression)
             : { type: 'SpreadElement', argument: memberExpression }
+          const esmExpression = esmDeclarationToExpression(node, importName)
           exports.push(property)
           toPatch.push(property)
           importAssignments.push(null)
-          importExpressions.push(esmDeclarationToExpression(node, importName))
+          importExpressions.push(
+            node.exported
+              ? esmExpression
+              : {
+                  type: 'CallExpression',
+                  optional: false,
+                  callee: {
+                    type: 'MemberExpression',
+                    object: esmExpression,
+                    property: { type: 'Identifier', name: 'then' },
+                    computed: false,
+                    optional: false
+                  },
+                  arguments: [
+                    {
+                      type: 'ArrowFunctionExpression',
+                      expression: true,
+                      params: [
+                        {
+                          type: 'ObjectPattern',
+                          properties: [
+                            {
+                              type: 'Property',
+                              method: false,
+                              shorthand: false,
+                              computed: false,
+                              kind: 'init',
+                              key: { type: 'Identifier', name: 'default' },
+                              value: { type: 'Identifier', name: '_' }
+                            },
+                            { type: 'RestElement', argument: { type: 'Identifier', name: 'm' } }
+                          ]
+                        }
+                      ],
+                      body: { type: 'Identifier', name: 'm' }
+                    }
+                  ]
+                }
+          )
 
           this.remove()
         }
