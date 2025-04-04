@@ -3,6 +3,6 @@ export default async (customImport) => {
   'use strict'
   const _imports = await customImport('module')
   return {
-    default: _imports.default
+    ..._imports
   }
 }

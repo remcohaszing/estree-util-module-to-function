@@ -4,6 +4,7 @@ extends:
   - remcohaszing/typechecking
 rules:
   default-case: off
+  no-param-reassign: off
   '@typescript-eslint/no-namespace': off
   '@typescript-eslint/no-redeclare': off
   '@typescript-eslint/switch-exhaustiveness-check': off

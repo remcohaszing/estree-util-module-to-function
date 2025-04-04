@@ -3,7 +3,10 @@ import {
   type AwaitExpression,
   type CallExpression,
   type ClassDeclaration,
+  type Declaration,
+  type ExportAllDeclaration,
   type ExportNamedDeclaration,
+  type Expression,
   type ExpressionStatement,
   type FunctionDeclaration,
   type Identifier,
@@ -14,68 +17,13 @@ import {
   type MemberExpression,
   type MetaProperty,
   type ObjectExpression,
-  type ObjectPattern,
   type Pattern,
   type Program,
   type Property,
-  type Statement
+  type SpreadElement,
+  type VariableDeclarator
 } from 'estree'
 import { walk } from 'estree-walker'
-
-type ImportTuple = [
-  //
-  /**
-   * An identifier for a namespace import, an object pattern for named or default exports, or null
-   * for bare imports.
-   */
-  specifier: Identifier | ObjectPattern | null,
-
-  /**
-   * The source the import originated from.
-   */
-  source: Literal,
-
-  /**
-   * The import attributes of an import or re-export.
-   */
-  attributes: ImportAttribute[] | undefined
-]
-
-/**
- * @param node
- *   The import declaration to turn into an import tuple.
- * @returns
- *   An import tuple.
- */
-function convertImportDeclaration(node: ImportDeclaration): ImportTuple {
-  const properties: AssignmentProperty[] = []
-
-  for (const specifier of node.specifiers) {
-    if (specifier.type === 'ImportNamespaceSpecifier') {
-      return [specifier.local, node.source, node.attributes]
-    }
-    properties.push({
-      type: 'Property',
-      method: false,
-      shorthand:
-        specifier.type === 'ImportSpecifier' &&
-        (specifier.imported as Identifier).name === specifier.local.name,
-      computed: false,
-      kind: 'init',
-      key:
-        specifier.type === 'ImportDefaultSpecifier'
-          ? { type: 'Identifier', name: 'default' }
-          : specifier.imported,
-      value: specifier.local
-    })
-  }
-
-  return [
-    properties.length ? { type: 'ObjectPattern', properties } : null,
-    node.source,
-    node.attributes
-  ]
-}
 
 /**
  * Convert import attributes to an object expression.
@@ -189,57 +137,39 @@ function* findExportDeclarations(node: Pattern): Generator<string> {
 }
 
 /**
- * Extract all export names of a named export.
+ * Extract all export names of a variable declaration.
  *
- * @param node
- *   The export declaration of which to find all exported names.
+ * @param declaration
+ *   The declaration of which to find all exported names.
  * @returns
  *   An array of properties.
  */
-function extractExportNames(node: ExportNamedDeclaration): Property[] {
+function extractExportNames(declaration: Declaration): Property[] {
   const result: Property[] = []
 
-  if (node.declaration) {
-    if (node.declaration.type === 'VariableDeclaration') {
-      for (const declarator of node.declaration.declarations) {
-        for (const name of findExportDeclarations(declarator.id)) {
-          result.push({
-            type: 'Property',
-            computed: false,
-            shorthand: true,
-            method: false,
-            kind: 'init',
-            key: { type: 'Identifier', name },
-            value: { type: 'Identifier', name }
-          })
-        }
+  if (declaration.type === 'VariableDeclaration') {
+    for (const declarator of declaration.declarations) {
+      for (const name of findExportDeclarations(declarator.id)) {
+        result.push({
+          type: 'Property',
+          computed: false,
+          shorthand: true,
+          method: false,
+          kind: 'init',
+          key: { type: 'Identifier', name },
+          value: { type: 'Identifier', name }
+        })
       }
-    } else {
-      result.push({
-        type: 'Property',
-        computed: false,
-        shorthand: true,
-        method: false,
-        kind: 'init',
-        key: { type: 'Identifier', name: node.declaration.id.name },
-        value: { type: 'Identifier', name: node.declaration.id.name }
-      })
     }
-  }
-
-  for (const specifier of node.specifiers) {
+  } else {
     result.push({
       type: 'Property',
       computed: false,
-      shorthand:
-        !node.source &&
-        (specifier.exported as Identifier).name === (specifier.local as Identifier).name,
+      shorthand: true,
       method: false,
       kind: 'init',
-      key: specifier.exported,
-      value: node.source
-        ? { type: 'Identifier', name: `__re_exported__${(specifier.local as Identifier).name}__` }
-        : specifier.local
+      key: { type: 'Identifier', name: declaration.id.name },
+      value: { type: 'Identifier', name: declaration.id.name }
     })
   }
 
@@ -247,81 +177,107 @@ function extractExportNames(node: ExportNamedDeclaration): Property[] {
 }
 
 /**
- * Create dynamic imports from import tuples.
+ * Transform ESM import or re-export declarations into import expressions.
  *
- * If multiple imports are found, they are combined into a `Promise.all()` call.
- *
- * @param imports
- *   The import tuples from which to create dynamic imports.
+ * @param node
+ *   The ESM node to transform.
  * @param importName
- *   The name of a custom identifier to use.
+ *   The import name to use for the custom import.
  * @returns
- *   An expression that contains all dynamic imports.
+ *   The ESM declaration as an import expression.
  */
-function createDynamicImports(imports: ImportTuple[], importName?: string): Statement {
-  const importExpressions: (CallExpression | ImportExpression)[] = []
-  const specifiers: (Pattern | null)[] = []
-  let hasSpecifiers = false
+function esmDeclarationToExpression(
+  node: ExportAllDeclaration | ExportNamedDeclaration | ImportDeclaration,
+  importName: string | undefined
+): CallExpression | ImportExpression {
+  let options: Expression | undefined
 
-  for (const [specifier, source, attributes = []] of imports) {
-    if (importName) {
-      const callExpression: CallExpression = {
-        type: 'CallExpression',
-        optional: false,
-        callee: { type: 'Identifier', name: importName },
-        arguments: [source]
-      }
-      if (attributes.length) {
-        callExpression.arguments.push(convertImportAttributes(attributes))
-      }
-      importExpressions.push(callExpression)
-    } else {
-      const importExpression: ImportExpression = { type: 'ImportExpression', source }
-      if (attributes.length) {
-        importExpression.options = convertImportAttributes(attributes)
-      }
-      importExpressions.push(importExpression)
-    }
-
-    hasSpecifiers ||= Boolean(specifier)
-    specifiers.push(specifier)
-  }
-
-  const expression: AwaitExpression = {
-    type: 'AwaitExpression',
-    argument:
-      imports.length === 1
-        ? importExpressions[0]
-        : {
-            type: 'CallExpression',
-            optional: false,
-            callee: {
-              type: 'MemberExpression',
-              computed: false,
-              optional: false,
-              object: { type: 'Identifier', name: 'Promise' },
-              property: { type: 'Identifier', name: 'all' }
-            },
-            arguments: [{ type: 'ArrayExpression', elements: importExpressions }]
-          }
-  }
-
-  if (hasSpecifiers) {
-    return {
-      type: 'VariableDeclaration',
-      kind: 'const',
-      declarations: [
+  if (node.attributes.length) {
+    options = {
+      type: 'ObjectExpression',
+      properties: [
         {
-          type: 'VariableDeclarator',
-          id:
-            imports.length === 1 ? specifiers[0]! : { type: 'ArrayPattern', elements: specifiers },
-          init: expression
+          type: 'Property',
+          computed: false,
+          method: false,
+          shorthand: false,
+          kind: 'init',
+          key: {
+            type: 'Identifier',
+            name: 'with'
+          },
+          value: convertImportAttributes(node.attributes)
         }
       ]
     }
   }
 
-  return { type: 'ExpressionStatement', expression }
+  if (importName) {
+    const callExpression: CallExpression = {
+      type: 'CallExpression',
+      optional: false,
+      callee: { type: 'Identifier', name: importName },
+      arguments: [node.source!]
+    }
+
+    if (options) {
+      callExpression.arguments.push(options)
+    }
+
+    return callExpression
+  }
+
+  const importExpression: ImportExpression = {
+    type: 'ImportExpression',
+    source: node.source!
+  }
+
+  if (options) {
+    importExpression.options = options
+  }
+
+  return importExpression
+}
+
+/**
+ * Check if two identifiers can be used for a shorthand property.
+ *
+ * @param a
+ *   The first potential identifier node
+ * @param b
+ *   The other potential identifier node
+ * @returns
+ *   Whether `a` and `b` are equal identifier nodes.
+ */
+function isShorthand(a: Identifier | Literal, b: Identifier | Literal): boolean {
+  return a.type === 'Identifier' && b.type === 'Identifier' && a.name === b.name
+}
+
+/**
+ * Replace import array references in the return exports with just a direct reference.
+ *
+ * The `Promise.all()` call is avoided when only one import expression is needed.
+ *
+ * @param node
+ *   The node to replace the reference for.
+ */
+function singularImport(node: MemberExpression | Property | SpreadElement): undefined {
+  switch (node.type) {
+    case 'MemberExpression':
+      if (node.object.type === 'MemberExpression') {
+        node.object = node.object.object
+      }
+      return
+    case 'Property':
+      if (node.value.type === 'MemberExpression' && node.value.object.type === 'Identifier') {
+        node.value = node.value.object
+      }
+      return
+    case 'SpreadElement':
+      if (node.argument.type === 'MemberExpression' && node.argument.object.type === 'Identifier') {
+        node.argument = node.argument.object
+      }
+  }
 }
 
 /**
@@ -375,8 +331,10 @@ export function moduleToFunction(
   ast: Program,
   { importName }: moduleToFunction.Options = {}
 ): undefined {
-  const imports: ImportTuple[] = []
-  const exports: Property[] = []
+  const importAssignments: (Pattern | null)[] = []
+  const importExpressions: (CallExpression | ImportExpression)[] = []
+  const exports: (Property | SpreadElement)[] = []
+  const toPatch: (MemberExpression | Property | SpreadElement)[] = []
   let directive: ExpressionStatement | undefined
 
   walk(ast, {
@@ -397,10 +355,45 @@ export function moduleToFunction(
           return
         }
 
-        case 'ImportDeclaration':
-          imports.push(convertImportDeclaration(node))
+        case 'ImportDeclaration': {
+          const properties: AssignmentProperty[] = []
+          let starIdentifier: Identifier | null = null
+          for (const specifier of node.specifiers) {
+            switch (specifier.type) {
+              case 'ImportDefaultSpecifier':
+                properties.push({
+                  type: 'Property',
+                  computed: false,
+                  method: false,
+                  shorthand: false,
+                  kind: 'init',
+                  key: { type: 'Identifier', name: 'default' },
+                  value: specifier.local
+                })
+                break
+              case 'ImportNamespaceSpecifier':
+                starIdentifier = specifier.local
+                break
+              case 'ImportSpecifier':
+                properties.push({
+                  type: 'Property',
+                  computed: false,
+                  method: false,
+                  shorthand: isShorthand(specifier.imported, specifier.local),
+                  kind: 'init',
+                  key: specifier.imported,
+                  value: specifier.local
+                })
+                break
+            }
+          }
+          importAssignments.push(
+            properties.length ? { type: 'ObjectPattern', properties } : starIdentifier
+          )
+          importExpressions.push(esmDeclarationToExpression(node, importName))
           this.remove()
           return
+        }
 
         case 'ImportExpression':
           if (importName) {
@@ -420,6 +413,9 @@ export function moduleToFunction(
             declaration.type === 'FunctionDeclaration' ||
             declaration.type === 'ClassDeclaration'
           ) {
+            if (!declaration.id) {
+              declaration.id = { type: 'Identifier', name: '__default_export__' }
+            }
             this.replace(declaration as ClassDeclaration | FunctionDeclaration)
             exports.push({
               type: 'Property',
@@ -428,7 +424,7 @@ export function moduleToFunction(
               shorthand: false,
               kind: 'init',
               key: { type: 'Identifier', name: 'default' },
-              value: { type: 'Identifier', name: declaration.id!.name }
+              value: { type: 'Identifier', name: declaration.id.name }
             })
           } else {
             this.replace({
@@ -455,55 +451,167 @@ export function moduleToFunction(
           return
         }
 
-        case 'ExportNamedDeclaration': {
-          const nodeExports = [...extractExportNames(node)]
-          exports.push(...nodeExports)
+        case 'ExportNamedDeclaration':
           if (node.declaration) {
+            exports.push(...extractExportNames(node.declaration))
             this.replace(node.declaration)
-          } else {
-            this.remove()
-            if (node.source) {
-              imports.push([
-                {
-                  type: 'ObjectPattern',
-                  properties: nodeExports.map((property) => ({
-                    type: 'Property',
-                    computed: false,
-                    method: false,
-                    shorthand: false,
-                    kind: 'init',
-                    key: { type: 'Identifier', name: (property.key as Identifier).name },
-                    value: { type: 'Identifier', name: (property.value as Identifier).name }
-                  }))
-                },
-                node.source,
-                node.attributes
-              ])
-            }
+            return
           }
+          if (node.source == null) {
+            for (const specifier of node.specifiers) {
+              exports.push({
+                type: 'Property',
+                computed: false,
+                kind: 'init',
+                method: false,
+                shorthand: isShorthand(specifier.exported, specifier.local),
+                key: specifier.exported,
+                value: specifier.local
+              })
+            }
+          } else {
+            for (const specifier of node.specifiers) {
+              const memberExpression: MemberExpression = {
+                type: 'MemberExpression',
+                computed: false,
+                optional: false,
+                object: {
+                  type: 'MemberExpression',
+                  computed: true,
+                  optional: false,
+                  object: { type: 'Identifier', name: '_imports' },
+                  property: { type: 'Literal', value: importExpressions.length }
+                },
+                property: specifier.local
+              }
+              exports.push({
+                type: 'Property',
+                computed: false,
+                kind: 'init',
+                method: false,
+                shorthand: false,
+                key: specifier.exported,
+                value: memberExpression
+              })
+              toPatch.push(memberExpression)
+            }
+            importAssignments.push(null)
+            importExpressions.push(esmDeclarationToExpression(node, importName))
+          }
+          this.remove()
           return
-        }
 
         case 'ExportAllDeclaration': {
-          const name = `__re_exported_star__${(node.exported as Identifier).name}__`
-          imports.push([{ type: 'Identifier', name }, node.source, node.attributes])
-          exports.push({
-            type: 'Property',
-            computed: false,
-            method: false,
-            shorthand: false,
-            kind: 'init',
-            key: { type: 'Identifier', name: (node.exported as Identifier).name },
-            value: { type: 'Identifier', name }
-          })
+          const memberExpression: MemberExpression = {
+            type: 'MemberExpression',
+            computed: true,
+            optional: false,
+            object: { type: 'Identifier', name: '_imports' },
+            property: { type: 'Literal', value: importExpressions.length }
+          }
+          const property: Property | SpreadElement = node.exported
+            ? {
+                type: 'Property',
+                computed: false,
+                method: false,
+                shorthand: false,
+                kind: 'init',
+                key: node.exported,
+                value: memberExpression
+              }
+            : {
+                type: 'SpreadElement',
+                argument: memberExpression
+              }
+          exports.push(property)
+          toPatch.push(property)
+          importAssignments.push(null)
+          importExpressions.push(esmDeclarationToExpression(node, importName))
+
           this.remove()
         }
       }
     }
   })
 
-  if (imports.length) {
-    ast.body.unshift(createDynamicImports(imports, importName))
+  if (importExpressions.length) {
+    let importExpression: CallExpression | ImportExpression
+    let importAssignment: Pattern | null
+
+    if (importExpressions.length === 1) {
+      importExpression = importExpressions[0]
+      importAssignment = importAssignments[0]
+
+      for (const node of toPatch) {
+        singularImport(node)
+      }
+    } else {
+      importExpression = {
+        type: 'CallExpression',
+        optional: false,
+        callee: {
+          type: 'MemberExpression',
+          computed: false,
+          optional: false,
+          object: { type: 'Identifier', name: 'Promise' },
+          property: { type: 'Identifier', name: 'all' }
+        },
+        arguments: [{ type: 'ArrayExpression', elements: importExpressions }]
+      }
+      while (importAssignments.length && !importAssignments.at(-1)) {
+        importAssignments.pop()
+      }
+      importAssignment = { type: 'ArrayPattern', elements: importAssignments }
+    }
+
+    if (toPatch.length) {
+      const declarations: VariableDeclarator[] = [
+        {
+          type: 'VariableDeclarator',
+          id: { type: 'Identifier', name: '_imports' },
+          init: {
+            type: 'AwaitExpression',
+            argument: importExpression
+          }
+        }
+      ]
+      if (importAssignment) {
+        declarations.push({
+          type: 'VariableDeclarator',
+          id: importAssignment,
+          init: { type: 'Identifier', name: '_imports' }
+        })
+      }
+      ast.body.unshift({
+        type: 'VariableDeclaration',
+        kind: 'const',
+        declarations
+      })
+    } else {
+      const awaitExpression: AwaitExpression = {
+        type: 'AwaitExpression',
+        argument: importExpression
+      }
+
+      ast.body.unshift(
+        importAssignment
+          ? {
+              type: 'VariableDeclaration',
+              kind: 'const',
+              declarations: [
+                {
+                  type: 'VariableDeclarator',
+                  id: importAssignment,
+                  init: awaitExpression
+                }
+              ]
+            }
+          : {
+              type: 'ExpressionStatement',
+              expression: awaitExpression
+            }
+      )
+    }
   }
 
   ast.body.unshift(
