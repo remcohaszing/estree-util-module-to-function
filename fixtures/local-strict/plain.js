@@ -1,5 +1,7 @@
 export default async () => {
   'use strict'
   function strictFunction() {}
-  return {}
+  return {
+    __proto__: null
+  }
 }

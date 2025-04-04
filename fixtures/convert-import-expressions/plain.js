@@ -1,5 +1,7 @@
 export default async () => {
   'use strict'
   import('path')
-  return {}
+  return {
+    __proto__: null
+  }
 }

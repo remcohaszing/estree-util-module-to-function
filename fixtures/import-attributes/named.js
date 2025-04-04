@@ -52,6 +52,7 @@ export default async (customImport) => {
     }
   })
   return {
+    __proto__: null,
     default: _imports[3].default,
     singleQuote: _imports[4].singleQuote,
     eslint: _imports[5]

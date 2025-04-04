@@ -5,5 +5,7 @@ export default async () => {
     import('remark-parse'),
     import('./style.css')
   ])
-  return {}
+  return {
+    __proto__: null
+  }
 }

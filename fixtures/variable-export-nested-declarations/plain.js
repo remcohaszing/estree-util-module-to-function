@@ -10,6 +10,7 @@ export default async () => {
     ]
   } = original
   return {
+    __proto__: null,
     exported
   }
 }

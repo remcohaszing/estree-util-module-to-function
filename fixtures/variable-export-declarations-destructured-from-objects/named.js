@@ -3,6 +3,7 @@ export default async (customImport) => {
   'use strict'
   const { age, name } = person
   return {
+    __proto__: null,
     age,
     name
   }

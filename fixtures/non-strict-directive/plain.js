@@ -1,5 +1,7 @@
 export default async () => {
   'use strict'
   'use client'
-  return {}
+  return {
+    __proto__: null
+  }
 }

@@ -137,6 +137,52 @@ function* findExportDeclarations(node: Pattern): Generator<string> {
 }
 
 /**
+ * Check if two identifiers can be used for a shorthand property.
+ *
+ * @param a
+ *   The first potential identifier node
+ * @param b
+ *   The other potential identifier node
+ * @returns
+ *   Whether `a` and `b` are equal identifier nodes.
+ */
+function isShorthand(a: Identifier | Literal, b: Expression): boolean {
+  return a.type === 'Identifier' && b.type === 'Identifier' && a.name === b.name
+}
+
+/**
+ * Create a property that can be exported.
+ *
+ * @param key
+ *   The key to export as.
+ * @param value
+ *   The value expression to export.
+ * @returns
+ *   A property for the returned exports.
+ */
+function createProperty(key: Identifier | Literal, value: Expression): Property {
+  let computed = false
+  if (key.type === 'Literal') {
+    if (key.value === '__proto__') {
+      computed = true
+    }
+  } else if (key.name === '__proto__') {
+    computed = true
+    key = { type: 'Literal', value: '__proto__' }
+  }
+
+  return {
+    type: 'Property',
+    computed,
+    method: false,
+    shorthand: !computed && isShorthand(key, value),
+    kind: 'init',
+    key,
+    value
+  }
+}
+
+/**
  * Extract all export names of a variable declaration.
  *
  * @param declaration
@@ -150,27 +196,16 @@ function extractExportNames(declaration: Declaration): Property[] {
   if (declaration.type === 'VariableDeclaration') {
     for (const declarator of declaration.declarations) {
       for (const name of findExportDeclarations(declarator.id)) {
-        result.push({
-          type: 'Property',
-          computed: false,
-          shorthand: true,
-          method: false,
-          kind: 'init',
-          key: { type: 'Identifier', name },
-          value: { type: 'Identifier', name }
-        })
+        result.push(createProperty({ type: 'Identifier', name }, { type: 'Identifier', name }))
       }
     }
   } else {
-    result.push({
-      type: 'Property',
-      computed: false,
-      shorthand: true,
-      method: false,
-      kind: 'init',
-      key: { type: 'Identifier', name: declaration.id.name },
-      value: { type: 'Identifier', name: declaration.id.name }
-    })
+    result.push(
+      createProperty(
+        { type: 'Identifier', name: declaration.id.name },
+        { type: 'Identifier', name: declaration.id.name }
+      )
+    )
   }
 
   return result
@@ -237,20 +272,6 @@ function esmDeclarationToExpression(
   }
 
   return importExpression
-}
-
-/**
- * Check if two identifiers can be used for a shorthand property.
- *
- * @param a
- *   The first potential identifier node
- * @param b
- *   The other potential identifier node
- * @returns
- *   Whether `a` and `b` are equal identifier nodes.
- */
-function isShorthand(a: Identifier | Literal, b: Identifier | Literal): boolean {
-  return a.type === 'Identifier' && b.type === 'Identifier' && a.name === b.name
 }
 
 /**
@@ -331,11 +352,21 @@ export function moduleToFunction(
   ast: Program,
   { importName }: moduleToFunction.Options = {}
 ): undefined {
+  let directive: ExpressionStatement | undefined
   const importAssignments: (Pattern | null)[] = []
   const importExpressions: (CallExpression | ImportExpression)[] = []
-  const exports: (Property | SpreadElement)[] = []
   const toPatch: (MemberExpression | Property | SpreadElement)[] = []
-  let directive: ExpressionStatement | undefined
+  const exports: (Property | SpreadElement)[] = [
+    {
+      type: 'Property',
+      computed: false,
+      method: false,
+      shorthand: false,
+      kind: 'init',
+      key: { type: 'Identifier', name: '__proto__' },
+      value: { type: 'Literal', value: null }
+    }
+  ]
 
   walk(ast, {
     enter(node) {
@@ -417,15 +448,12 @@ export function moduleToFunction(
               declaration.id = { type: 'Identifier', name: '__default_export__' }
             }
             this.replace(declaration as ClassDeclaration | FunctionDeclaration)
-            exports.push({
-              type: 'Property',
-              computed: false,
-              method: false,
-              shorthand: false,
-              kind: 'init',
-              key: { type: 'Identifier', name: 'default' },
-              value: { type: 'Identifier', name: declaration.id.name }
-            })
+            exports.push(
+              createProperty(
+                { type: 'Identifier', name: 'default' },
+                { type: 'Identifier', name: declaration.id.name }
+              )
+            )
           } else {
             this.replace({
               type: 'VariableDeclaration',
@@ -438,15 +466,12 @@ export function moduleToFunction(
                 }
               ]
             })
-            exports.push({
-              type: 'Property',
-              computed: false,
-              method: false,
-              shorthand: false,
-              kind: 'init',
-              key: { type: 'Identifier', name: 'default' },
-              value: { type: 'Identifier', name: '__default_export__' }
-            })
+            exports.push(
+              createProperty(
+                { type: 'Identifier', name: 'default' },
+                { type: 'Identifier', name: '__default_export__' }
+              )
+            )
           }
           return
         }
@@ -459,21 +484,17 @@ export function moduleToFunction(
           }
           if (node.source == null) {
             for (const specifier of node.specifiers) {
-              exports.push({
-                type: 'Property',
-                computed: false,
-                kind: 'init',
-                method: false,
-                shorthand: isShorthand(specifier.exported, specifier.local),
-                key: specifier.exported,
-                value: specifier.local
-              })
+              exports.push(createProperty(specifier.exported, specifier.local))
             }
           } else {
             for (const specifier of node.specifiers) {
+              let { exported, local } = specifier
+              if (local.type === 'Identifier' && local.name === '__proto__') {
+                local = { type: 'Literal', value: '__proto__' }
+              }
               const memberExpression: MemberExpression = {
                 type: 'MemberExpression',
-                computed: specifier.local.type === 'Literal',
+                computed: local.type === 'Literal',
                 optional: false,
                 object: {
                   type: 'MemberExpression',
@@ -482,17 +503,9 @@ export function moduleToFunction(
                   object: { type: 'Identifier', name: '_imports' },
                   property: { type: 'Literal', value: importExpressions.length }
                 },
-                property: specifier.local
+                property: local
               }
-              exports.push({
-                type: 'Property',
-                computed: false,
-                kind: 'init',
-                method: false,
-                shorthand: false,
-                key: specifier.exported,
-                value: memberExpression
-              })
+              exports.push(createProperty(exported, memberExpression))
               toPatch.push(memberExpression)
             }
             importAssignments.push(null)
@@ -510,19 +523,8 @@ export function moduleToFunction(
             property: { type: 'Literal', value: importExpressions.length }
           }
           const property: Property | SpreadElement = node.exported
-            ? {
-                type: 'Property',
-                computed: false,
-                method: false,
-                shorthand: false,
-                kind: 'init',
-                key: node.exported,
-                value: memberExpression
-              }
-            : {
-                type: 'SpreadElement',
-                argument: memberExpression
-              }
+            ? createProperty(node.exported, memberExpression)
+            : { type: 'SpreadElement', argument: memberExpression }
           exports.push(property)
           toPatch.push(property)
           importAssignments.push(null)

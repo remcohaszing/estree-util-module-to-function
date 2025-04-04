@@ -2,5 +2,7 @@
 export default async (customImport) => {
   'use strict'
   function strictFunction() {}
-  return {}
+  return {
+    __proto__: null
+  }
 }

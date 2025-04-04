@@ -11,6 +11,7 @@ export default async (customImport) => {
     ]
   } = original
   return {
+    __proto__: null,
     exported
   }
 }

@@ -3,6 +3,7 @@ export default async (customImport) => {
   'use strict'
   class Pet {}
   return {
+    __proto__: null,
     default: Pet
   }
 }

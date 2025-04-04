@@ -6,5 +6,7 @@ export default async (customImport) => {
     customImport('remark-parse'),
     customImport('./style.css')
   ])
-  return {}
+  return {
+    __proto__: null
+  }
 }

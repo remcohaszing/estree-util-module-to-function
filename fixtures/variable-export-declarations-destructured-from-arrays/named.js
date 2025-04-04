@@ -3,6 +3,7 @@ export default async (customImport) => {
   'use strict'
   const [one, , three] = counts
   return {
+    __proto__: null,
     one,
     three
   }
