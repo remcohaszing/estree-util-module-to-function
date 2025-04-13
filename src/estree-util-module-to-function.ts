@@ -221,7 +221,8 @@ function esmDeclarationToExpression(
 ): CallExpression | ImportExpression {
   let options: Expression | undefined
 
-  if (node.attributes.length) {
+  // Older versions of ESTree might not define node.attributes
+  if (node.attributes?.length) {
     options = {
       type: 'ObjectExpression',
       properties: [
