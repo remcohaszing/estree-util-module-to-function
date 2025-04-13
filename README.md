@@ -62,7 +62,9 @@ import { parse } from 'acorn'
 import { generate } from 'astring'
 import { moduleToFunction } from 'estree-util-module-to-function'
 
-const AsyncFunction = (async () => {}).constructor
+const AsyncFunction = (async () => {
+  // This function is only defined to access the AsyncFunction constructor.
+}).constructor
 
 const source = `
 import { readdir } from 'node:fs/promises'

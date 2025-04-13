@@ -109,7 +109,7 @@ function convertMetaProperty(node: MetaProperty, importName: string): MemberExpr
  *
  * @param node
  *   The node on which to find export declarations.
- * @yields
+ * @returns
  *   The names of all export declarations found.
  */
 function* findExportDeclarations(node: Pattern): Generator<string> {
@@ -347,7 +347,7 @@ export function moduleToFunction(
   { importName }: moduleToFunction.Options = {}
 ): undefined {
   let directive: ExpressionStatement | undefined
-  const importAssignments: (Pattern | null)[] = []
+  const importAssignments: (null | Pattern)[] = []
   const importExpressions: (CallExpression | ImportExpression)[] = []
   const toPatch: (MemberExpression | Property | SpreadElement)[] = []
   const exports: (Property | SpreadElement)[] = [
@@ -453,9 +453,7 @@ export function moduleToFunction(
             declaration.type === 'FunctionDeclaration' ||
             declaration.type === 'ClassDeclaration'
           ) {
-            if (!declaration.id) {
-              declaration.id = { type: 'Identifier', name: '__default_export__' }
-            }
+            declaration.id ||= { type: 'Identifier', name: '__default_export__' }
             this.replace(declaration as ClassDeclaration | FunctionDeclaration)
             exports.push(
               createProperty(
@@ -586,7 +584,7 @@ export function moduleToFunction(
 
   if (importExpressions.length) {
     let importExpression: CallExpression | ImportExpression
-    let importAssignment: Pattern | null
+    let importAssignment: null | Pattern
 
     if (importExpressions.length === 1) {
       importExpression = importExpressions[0]
