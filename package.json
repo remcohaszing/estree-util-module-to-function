@@ -1,6 +1,6 @@
 {
   "name": "estree-util-module-to-function",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Convert an estree module into a function body",
   "type": "module",
   "exports": "./dist/estree-util-module-to-function.js",
