@@ -1,6 +1,7 @@
+import type { Program } from 'estree'
+
 import { parse } from 'acorn'
 import { generate } from 'astring'
-import { type Program } from 'estree'
 import { moduleToFunction } from 'estree-util-module-to-function'
 import { testFixturesDirectory } from 'snapshot-fixtures'
 

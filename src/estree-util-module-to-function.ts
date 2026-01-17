@@ -1,28 +1,29 @@
-import {
-  type AssignmentProperty,
-  type AwaitExpression,
-  type CallExpression,
-  type ClassDeclaration,
-  type Declaration,
-  type ExportAllDeclaration,
-  type ExportNamedDeclaration,
-  type Expression,
-  type ExpressionStatement,
-  type FunctionDeclaration,
-  type Identifier,
-  type ImportAttribute,
-  type ImportDeclaration,
-  type ImportExpression,
-  type Literal,
-  type MemberExpression,
-  type MetaProperty,
-  type ObjectExpression,
-  type Pattern,
-  type Program,
-  type Property,
-  type SpreadElement,
-  type VariableDeclarator
+import type {
+  AssignmentProperty,
+  AwaitExpression,
+  CallExpression,
+  ClassDeclaration,
+  Declaration,
+  ExportAllDeclaration,
+  ExportNamedDeclaration,
+  Expression,
+  ExpressionStatement,
+  FunctionDeclaration,
+  Identifier,
+  ImportAttribute,
+  ImportDeclaration,
+  ImportExpression,
+  Literal,
+  MemberExpression,
+  MetaProperty,
+  ObjectExpression,
+  Pattern,
+  Program,
+  Property,
+  SpreadElement,
+  VariableDeclarator
 } from 'estree'
+
 import { walk } from 'estree-walker'
 
 /**
